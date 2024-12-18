@@ -9,9 +9,34 @@ struct cpu {
   int intena;                  // Were interrupts enabled before pushcli?
   struct proc *proc;           // The process running on this cpu or null
 };
+struct proc* find_child_process(int parent_pid);
 
 extern struct cpu cpus[NCPU];
 extern int ncpu;
+
+#ifndef PROC_H
+#define PROC_H
+
+#define STRACE_BUFFER_SIZE 5
+#define SYSCALL_NAME_LEN 16
+
+// Trace event structure
+struct trace_event {
+    int pid;
+    char name[16];
+    char syscall[SYSCALL_NAME_LEN];
+    int return_value;
+};
+
+// Declare buffer and index variables for tracing
+extern struct trace_event strace_buffer[STRACE_BUFFER_SIZE];
+extern int strace_index;
+extern int strace_count;
+
+// Function to add a trace event
+void add_trace_event(int pid, char *name, char *syscall, int return_value);
+
+#endif  // PROC_H
 
 //PAGEBREAK: 17
 // Saved registers for kernel context switches.
@@ -49,6 +74,7 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
+  int strace_enabled;  // 0 - disabled, 1 - enabled
 };
 
 // Process memory is laid out contiguously, low addresses first:

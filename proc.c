@@ -20,6 +20,38 @@ extern void trapret(void);
 
 static void wakeup1(void *chan);
 
+// Circular buffer for storing trace events
+struct trace_event strace_buffer[STRACE_BUFFER_SIZE];
+int strace_index = 0;  // Circular buffer index
+int strace_count = 0;  // Number of events stored
+
+void add_trace_event(int pid, char *name, char *syscall, int return_value) {
+    struct trace_event *event = &strace_buffer[strace_index];
+
+    event->pid = pid;
+    safestrcpy(event->name, name, sizeof(event->name));
+    safestrcpy(event->syscall, syscall, SYSCALL_NAME_LEN);
+    event->return_value = return_value;
+
+    strace_index = (strace_index + 1) % STRACE_BUFFER_SIZE;  // Move to next index
+    if (strace_count < STRACE_BUFFER_SIZE) {
+        strace_count++;
+    }
+}
+
+struct proc* find_child_process(int parent_pid) {
+    struct proc *p;
+    acquire(&ptable.lock);
+    for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
+        if (p->parent && p->parent->pid == parent_pid && p->state != UNUSED) {
+            release(&ptable.lock);
+            return p;
+        }
+    }
+    release(&ptable.lock);
+    return 0;  // No child found
+}
+
 void
 pinit(void)
 {

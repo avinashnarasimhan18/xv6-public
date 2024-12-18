@@ -89,3 +89,30 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+int sys_strace(void) {
+    int enable;
+    if (argint(0, &enable) < 0) {
+        return -1;
+    }
+
+    struct proc *p = myproc();
+
+    // Immediately disable strace if enable == 0
+    if (enable == 0) {
+        p->strace_enabled = 0;
+    } else {
+        p->strace_enabled = 1;
+    }
+    return 0;
+}
+
+int sys_strace_dump(void) {
+    for (int i = 0; i < strace_count; i++) {
+        int idx = (strace_index + i) % STRACE_BUFFER_SIZE;
+        struct trace_event *event = &strace_buffer[idx];
+        cprintf("TRACE EVENT: pid = %d | command_name = %s | syscall = %s | return_value = %d\n",
+                event->pid, event->name, event->syscall, event->return_value);
+    }
+    return 0;
+}
