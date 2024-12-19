@@ -17,7 +17,7 @@ extern int ncpu;
 #ifndef PROC_H
 #define PROC_H
 
-#define STRACE_BUFFER_SIZE 5
+#define STRACE_BUFFER_SIZE 10
 #define SYSCALL_NAME_LEN 16
 
 // Trace event structure

@@ -155,6 +155,8 @@ void syscall(void) {
     }
 
     if (num > 0 && num < NELEM(syscalls) && syscalls[num]) {
+        int ret_val;
+
         // Intercept write syscall to suppress command output
         if (p->strace_enabled && num == SYS_write) {
             int fd;
@@ -164,9 +166,11 @@ void syscall(void) {
             argptr(1, &buf, 1);  // Fetch buffer pointer
             argint(2, &n);
 
+            // Log the trace event for the write syscall
+            add_trace_event(p->pid, p->name, syscall_names[num], n);
+
             // Suppress output: Skip writing to stdout (fd == 1)
             if (fd == 1) {
-                // Only print trace logs, do not execute actual write
                 cprintf("TRACE: pid = %d | command_name = %s | syscall = %s | return_value = %d\n",
                         p->pid, p->name, syscall_names[num], n);
                 p->tf->eax = n;  // Simulate successful write
@@ -174,7 +178,8 @@ void syscall(void) {
             }
         }
 
-        int ret_val = syscalls[num]();  // Execute the system call
+        // Execute the system call
+        ret_val = syscalls[num]();
 
         // Handle fork explicitly
         if (num == SYS_fork && p->strace_enabled) {
@@ -197,3 +202,4 @@ void syscall(void) {
         p->tf->eax = -1;
     }
 }
+

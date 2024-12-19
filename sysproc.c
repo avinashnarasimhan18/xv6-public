@@ -131,7 +131,6 @@ int itoa(int n, char *s) {
     return i; // Return the length of the string
 }
 
-
 int sys_strace_dump(void) {
     struct proc *p = myproc(); // Get the current process
     struct file *f = p->ofile[1]; // Get the file associated with stdout
@@ -140,9 +139,20 @@ int sys_strace_dump(void) {
         return -1; // No valid stdout file descriptor
     }
 
-    for (int i = 0; i < strace_count; i++) {
-        int idx = (strace_index + i) % STRACE_BUFFER_SIZE;
+    // Determine how many events to display
+    int num_events = strace_count;
+
+    // Calculate the starting index for the oldest event
+    int start_idx = (strace_index - num_events + STRACE_BUFFER_SIZE) % STRACE_BUFFER_SIZE;
+
+    for (int i = 0; i < num_events; i++) {
+        int idx = (start_idx + i) % STRACE_BUFFER_SIZE; // Circular buffer logic
         struct trace_event *event = &strace_buffer[idx];
+
+        // Ensure the event is valid before printing
+        if (event->pid == 0 && event->name[0] == '\0' && event->syscall[0] == '\0') {
+            continue; // Skip uninitialized entries
+        }
 
         // Build the trace event string manually
         char buf[128];
