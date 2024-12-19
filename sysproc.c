@@ -107,12 +107,76 @@ int sys_strace(void) {
     return 0;
 }
 
+// Helper: Convert an integer to a string
+int itoa(int n, char *s) {
+    int i = 0, sign = n;
+
+    if (sign < 0) n = -n; // Handle negative numbers
+
+    // Generate digits in reverse order
+    do {
+        s[i++] = n % 10 + '0';
+    } while ((n /= 10) > 0);
+
+    if (sign < 0) s[i++] = '-'; // Add negative sign
+
+    s[i] = '\0';
+
+    // Reverse the string
+    for (int j = 0, k = i - 1; j < k; j++, k--) {
+        char temp = s[j];
+        s[j] = s[k];
+        s[k] = temp;
+    }
+    return i; // Return the length of the string
+}
+
+
 int sys_strace_dump(void) {
+    struct proc *p = myproc(); // Get the current process
+    struct file *f = p->ofile[1]; // Get the file associated with stdout
+
+    if (!f) {
+        return -1; // No valid stdout file descriptor
+    }
+
     for (int i = 0; i < strace_count; i++) {
         int idx = (strace_index + i) % STRACE_BUFFER_SIZE;
         struct trace_event *event = &strace_buffer[idx];
-        cprintf("TRACE EVENT: pid = %d | command_name = %s | syscall = %s | return_value = %d\n",
-                event->pid, event->name, event->syscall, event->return_value);
+
+        // Build the trace event string manually
+        char buf[128];
+        int len = 0;
+
+        safestrcpy(buf + len, "TRACE EVENT: pid = ", sizeof(buf) - len);
+        len += strlen(buf + len); // Update len after copying
+
+        len += itoa(event->pid, buf + len);
+
+        safestrcpy(buf + len, " | command_name = ", sizeof(buf) - len);
+        len += strlen(buf + len);
+
+        safestrcpy(buf + len, event->name, sizeof(buf) - len);
+        len += strlen(buf + len);
+
+        safestrcpy(buf + len, " | syscall = ", sizeof(buf) - len);
+        len += strlen(buf + len);
+
+        safestrcpy(buf + len, event->syscall, sizeof(buf) - len);
+        len += strlen(buf + len);
+
+        safestrcpy(buf + len, " | return_value = ", sizeof(buf) - len);
+        len += strlen(buf + len);
+
+        len += itoa(event->return_value, buf + len);
+        buf[len++] = '\n';
+
+        // Write to stdout (which may be redirected)
+        if (filewrite(f, buf, len) != len) {
+            return -1; // Error writing to file
+        }
     }
     return 0;
 }
+
+
