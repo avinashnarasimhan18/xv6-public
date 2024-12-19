@@ -182,7 +182,7 @@ UPROGS=\
 	_wc\
 	_zombie\
 	_strace\
-	_trace_child\
+	_traceChild\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
