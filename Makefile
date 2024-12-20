@@ -183,6 +183,7 @@ UPROGS=\
 	_zombie\
 	_strace\
 	_traceChild\
+	_straceReadxv6\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
