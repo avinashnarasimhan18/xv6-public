@@ -170,7 +170,7 @@ void syscall(void) {
             add_trace_event(p->pid, p->name, syscall_names[num], n);
 
             // Suppress output: Skip writing to stdout (fd == 1)
-            if (fd == 1) {
+            if (fd == 1 || fd == 2) {
                 cprintf("TRACE: pid = %d | command_name = %s | syscall = %s | return_value = %d\n",
                         p->pid, p->name, syscall_names[num], n);
                 p->tf->eax = n;  // Simulate successful write
